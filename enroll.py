@@ -1,3 +1,8 @@
+# enroll.py -> one time code to get face embeddings from captured images and save to database
+
+###################################################################################################################################
+
+
 import cv2 as cv
 import numpy as np
 import os
@@ -25,7 +30,6 @@ def main():
         sys.exit()
 
     # 3. Initialize SFace Model
-    # We only need the recognizer here, not the detector
     try:
         recognizer = cv.FaceRecognizerSF.create(SFACE_PATH, "")
     except Exception as e:

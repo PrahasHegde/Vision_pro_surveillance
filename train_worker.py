@@ -1,4 +1,8 @@
-# FILE: train_worker.py
+# train_worker.py -> to Process Captured Images and Update Face Embedding Database
+
+
+#####################################################################################################################################
+
 import cv2 as cv
 import numpy as np
 import os

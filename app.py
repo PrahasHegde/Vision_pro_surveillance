@@ -1,4 +1,9 @@
-# FILE: app.py
+#app.py -> Camera App with Face Capture and Training Trigger
+
+###################################################################################################################################
+
+
+
 import cv2 as cv
 import numpy as np
 import time

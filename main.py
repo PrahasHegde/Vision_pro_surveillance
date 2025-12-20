@@ -1,3 +1,9 @@
+#main.py -> Main Application: Real-Time Face Recognition from ESP32-CAM Stream
+
+
+####################################################################################################################################
+
+
 import cv2 as cv
 import numpy as np
 import os
@@ -7,8 +13,8 @@ import threading
 import gc
 from flask import Flask, Response, render_template_string
 
-# --- CONFIGURATION ---
-ESP32_URL = "http://192.168.0.203:81/stream" # Check your IP!
+#CONFIGURATION
+ESP32_URL = "http://192.168.0.203:81/stream"
 
 DB_FILE = "face_encodings2.pickle"
 YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"
@@ -135,7 +141,7 @@ def recognition_thread():
                 (box, name, score, color) = result
                 cv.rectangle(frame, (box[0], box[1]), (box[0]+box[2], box[1]+box[3]), color, 2)
                 
-                # Format Score: 0.87 -> "87%"
+                # Create Label
                 label = f"{name} ({int(score*100)}%)"
                 
                 cv.rectangle(frame, (box[0], box[1]-25), (box[0]+box[2], box[1]), color, -1)

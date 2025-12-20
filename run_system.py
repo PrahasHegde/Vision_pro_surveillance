@@ -1,4 +1,9 @@
-# FILE: run_system.py
+#run_system.py -> Supervisor Script to Manage Camera App and Trigger Training
+
+####################################################################################################################################
+
+
+
 import subprocess
 import time
 import os
