@@ -60,7 +60,6 @@ coverage.xml
 
 # Dataset and models
 /dataset/
-/models/
 
 # Facial embeddings files
 *.embeddings
