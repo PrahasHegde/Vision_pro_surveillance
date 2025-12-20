@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPi 5 Face Manager</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: #fff; text-align: center; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        img { border: 2px solid #4CAF50; border-radius: 8px; max-width: 100%; }
+        .controls { margin-top: 20px; background: #333; padding: 20px; border-radius: 8px; }
+        input { padding: 10px; border-radius: 4px; border: none; width: 40%; font-size: 16px; }
+        button { padding: 10px 20px; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin: 5px;}
+        .btn-capture { background: #4CAF50; }
+        .btn-train { background: #2196F3; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        .status-bar { margin-top: 15px; font-size: 18px; font-weight: bold; color: #FFD700; }
+        .training-bar { margin-top: 5px; font-size: 16px; color: #2196F3; }
+        .progress-container { width: 100%; background-color: #555; border-radius: 5px; margin-top: 10px; }
+        .progress-bar { width: 0%; height: 20px; background-color: #4CAF50; border-radius: 5px; transition: width 0.3s; }
+        .db-info { text-align: right; font-size: 0.8em; color: #888; margin-bottom: 5px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="db-info">Users in Database: <span id="userCount">0</span></div>
+        <h2>RPi 5 Face Registration</h2>
+        
+        <img src="{{ url_for('video_feed') }}" alt="Video Stream">
+
+        <div class="controls">
+            <h3>1. Capture Face</h3>
+            <input type="text" id="userId" placeholder="Enter Name (e.g., Jane)">
+            <button class="btn-capture" id="startBtn" onclick="startCapture()">Start Capture</button>
+            
+            <div class="status-bar" id="statusMessage">Ready</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <p id="countDisplay">0 / 200 Images</p>
+            
+            <hr style="border-color: #555;">
+            
+            <h3>2. Update Database</h3>
+            <p style="font-size: 0.9em; color: #aaa;">Click this after capturing to add the new person to the system.</p>
+            <button class="btn-train" id="trainBtn" onclick="startTraining()">Train / Update Model</button>
+            <div class="training-bar" id="trainingMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        setInterval(updateStatus, 1000);
+
+        function startCapture() {
+            const userId = document.getElementById("userId").value;
+            if (!userId) { alert("Enter a name first!"); return; }
+            
+            document.getElementById("startBtn").disabled = true;
+            fetch("/start_capture", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ user_id: userId })
+            }).then(r => r.json()).then(data => {
+                if(data.status !== "success") alert(data.message);
+            });
+        }
+
+        function startTraining() {
+            document.getElementById("trainBtn").disabled = true;
+            document.getElementById("trainingMessage").innerText = "Requesting training...";
+            
+            fetch("/train_model", { method: "POST" })
+            .then(r => r.json())
+            .then(data => {
+                console.log(data.message);
+            });
+        }
+
+        function updateStatus() {
+            fetch("/get_status")
+                .then(r => r.json())
+                .then(data => {
+                    // Update Capture UI
+                    document.getElementById("statusMessage").innerText = data.message;
+                    document.getElementById("countDisplay").innerText = `${data.count} / ${data.max}`;
+                    document.getElementById("progressBar").style.width = (data.count / data.max * 100) + "%";
+                    
+                    if (!data.capturing) {
+                        document.getElementById("startBtn").disabled = false;
+                    }
+
+                    // Update Training UI
+                    document.getElementById("trainingMessage").innerText = data.training_msg;
+                    if (data.training_msg.includes("Success") || data.training_msg.includes("Error")) {
+                        document.getElementById("trainBtn").disabled = false;
+                    }
+
+                    // Update DB Count
+                    document.getElementById("userCount").innerText = data.total_users;
+                });
+        }
+    </script>
+</body>
+</html>
