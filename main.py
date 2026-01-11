@@ -14,7 +14,7 @@ import gc
 from flask import Flask, Response, render_template_string
 
 #CONFIGURATION
-ESP32_URL = "http://192.168.0.203:81/stream"
+ESP32_URL = "http://192.168.0.196:81/stream"
 
 DB_FILE = "face_encodings2.pickle"
 YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"

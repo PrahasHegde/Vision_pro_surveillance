@@ -14,7 +14,7 @@ import pickle
 from flask import Flask, render_template, Response, jsonify, request
 
 # --- CONFIGURATION ---
-ESP32_URL = "http://192.168.0.203:81/stream"
+ESP32_URL = "http://192.168.0.196:81/stream"
 SAVE_DIR = "dataset"
 DB_FILE = "face_encodings2.pickle"
 MAX_IMAGES = 200
