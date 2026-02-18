@@ -2,9 +2,28 @@
 import cv2 as cv
 import numpy as np
 import os
+<<<<<<< HEAD
 import sys
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+=======
+import threading
+import queue
+import pickle
+from flask import Flask, render_template, Response, jsonify, request
+
+# --- CONFIGURATION ---
+ESP32_URL = "http://192.168.0.196:81/stream"
+SAVE_DIR = "dataset"
+DB_FILE = "face_encodings2.pickle"
+MAX_IMAGES = 200
+TIME_LIMIT_SEC = 60
+CONFIDENCE_THRESHOLD = 0.9
+BLUR_THRESHOLD = 35 
+FRAME_SKIP_RATE = 3 
+YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"
+SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
+>>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
 
 app = Flask(__name__)
 CORS(app)

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 #main_main -> code for running entire system- liveness detection, face recognition, and lock control
+=======
+#complete code for liveness detection and face recognition access control system with arduino integration and UI
+>>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
 
 import cv2 as cv
 import numpy as np
@@ -10,13 +14,17 @@ import sys
 import gc
 import serial
 from flask import Flask, Response, render_template_string, jsonify
+<<<<<<< HEAD
 import serial
 from flask import Flask, Response, render_template_string, jsonify
 # from flask_cors import CORS 
+=======
+>>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
 
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
+<<<<<<< HEAD
 URL_LEFT  = "http://192.168.0.6:81/stream"
 URL_RIGHT = "http://192.168.0.5:81/stream"
 
@@ -32,6 +40,10 @@ def add_cors_headers(response):
 
 class AppState:
     STATUS = "IDLE"
+=======
+URL_LEFT  = "http://192.168.0.196:81/stream"
+URL_RIGHT = "http://192.168.0.197:81/stream"
+>>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
 
 NPZ_PATH = 'stereo_calibration.npz'
 DB_FILE = "face_encodings2.pickle"
@@ -494,7 +506,11 @@ HTML_TEMPLATE = """
         <div class="sidebar">
             <div class="card header">
                 <h2>System Status</h2>
+<<<<<<< HEAD
                 <h1>VISION PRO</h1>
+=======
+                <h1>SENTRY V2.0</h1>
+>>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
             </div>
 
             <div class="card status-display">
@@ -568,6 +584,7 @@ def video_feed():
             time.sleep(0.03)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
+<<<<<<< HEAD
 
 
 @app.route("/status")
@@ -627,10 +644,19 @@ def manual_unlock():
         response = jsonify({"status": "error", "message": str(e)})
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 500
+=======
+@app.route("/status")
+def status_api():
+    return jsonify({"status": state.STATUS, "message": state.MESSAGE, "progress": state.LIVENESS_PROGRESS})
+>>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
 
 if __name__ == "__main__":
     t = threading.Thread(target=processing_thread)
     t.daemon = True
     t.start()
+<<<<<<< HEAD
 
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+=======
+    app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+>>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
