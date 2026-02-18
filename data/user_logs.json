@@ -1,0 +1,222 @@
+[
+    {
+        "timestamp": "2026-02-18 16:49:28",
+        "user": "testY",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:49:24",
+        "user": "testY",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:49:18",
+        "user": "testY",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:49:13",
+        "user": "testY",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:49:07",
+        "user": "testY",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:49:02",
+        "user": "testY",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:48:50",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:48:29",
+        "user": "testH",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:48:24",
+        "user": "testH",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:48:13",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:48:07",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:46:42",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:46:37",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:37:25",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:37:20",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:36:55",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:34:32",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:34:24",
+        "user": "testH",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:34:19",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:34:09",
+        "user": "testH",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 16:34:04",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:33:41",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:33:37",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:33:28",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:30:34",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:23:45",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:23:40",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:22:39",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:22:28",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:21:46",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:21:42",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:21:33",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:21:29",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:21:24",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 16:21:02",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 15:58:47",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 15:58:42",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 15:58:33",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 15:58:20",
+        "user": "testH",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 15:58:16",
+        "user": "testH",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 15:58:07",
+        "user": "testH",
+        "action": "ACCESS GRANTED"
+    },
+    {
+        "timestamp": "2026-02-18 15:58:00",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 15:08:56",
+        "user": "Unknown",
+        "action": "DENIED"
+    },
+    {
+        "timestamp": "2026-02-18 15:08:40",
+        "user": "Unknown",
+        "action": "DENIED"
+    }
+]

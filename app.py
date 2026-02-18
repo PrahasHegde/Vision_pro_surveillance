@@ -1,212 +1,145 @@
-#app.py -> Camera App with Face Capture and Training Trigger
-
-###################################################################################################################################
-
-
-
+# backend/app.py
 import cv2 as cv
 import numpy as np
-import time
 import os
-import threading
-import queue
-import pickle
-from flask import Flask, render_template, Response, jsonify, request
-
-# --- CONFIGURATION ---
-ESP32_URL = "http://192.168.0.203:81/stream"
-SAVE_DIR = "dataset"
-DB_FILE = "face_encodings2.pickle"
-MAX_IMAGES = 200
-TIME_LIMIT_SEC = 60
-CONFIDENCE_THRESHOLD = 0.9
-BLUR_THRESHOLD = 35 
-FRAME_SKIP_RATE = 3 
-YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"
-SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
+import sys
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
-outputFrame = None
-lock = threading.Lock()
+# --- CONFIGURATION ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMP_DIR = os.path.join(BASE_DIR, "temp_videos")
+DATASET_DIR = os.path.join(BASE_DIR, "dataset")
+TRIGGER_FILE = os.path.join(BASE_DIR, "trigger_training.txt")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+YUNET_PATH = os.path.join(MODEL_DIR, "face_detection_yunet_2023mar.onnx")
 
-is_capturing = False
-capture_user_id = "unknown"
-capture_start_time = 0
-images_captured = 0
-capture_message = "Ready"
+os.makedirs(TEMP_DIR, exist_ok=True)
+os.makedirs(DATASET_DIR, exist_ok=True)
 
-# Queue for saving images
-save_queue = queue.Queue()
+def process_video_to_dataset(video_path, username):
+    print(f"[DEBUG] Processing video for {username}")
+    print(f"[DEBUG] Video Path: {video_path}")
 
-def image_saver_worker():
-    while True:
-        file_path, image_data = save_queue.get()
-        if file_path is None: break
-        try:
-            cv.imwrite(file_path, image_data)
-        except: pass
-        save_queue.task_done()
-
-t_saver = threading.Thread(target=image_saver_worker, daemon=True)
-t_saver.start()
-
-def initialize_models(width=320, height=320):
-    detector = cv.FaceDetectorYN.create(YUNET_PATH, "", (width, height), 0.9, 0.3, 5000)
-    recognizer = cv.FaceRecognizerSF.create(SFACE_PATH, "")
-    return detector, recognizer
-
-def camera_processing_thread():
-    global outputFrame, is_capturing, images_captured, capture_message, capture_start_time
-
-    cap = None
-    detector = None
-    recognizer = None
-    frame_count = 0
-
-    print(f"[APP] Connecting to {ESP32_URL}")
-    cap = cv.VideoCapture(ESP32_URL, cv.CAP_FFMPEG)
-    cap.set(cv.CAP_PROP_BUFFERSIZE, 1)
+    # 1. Check Model
+    if not os.path.exists(YUNET_PATH):
+        print(f"[ERROR] Model missing at: {YUNET_PATH}")
+        return 0
     
-    if cap.isOpened():
-        detector, recognizer = initialize_models(320, 240)
-    else:
-        print("[APP] Camera connection failed (Will keep trying)")
+    try:
+        # Lower threshold to 0.6
+        detector = cv.FaceDetectorYN.create(YUNET_PATH, "", (320, 320), 0.6, 0.3, 5000)
+    except Exception as e:
+        print(f"[ERROR] Failed to load AI Model: {e}")
+        return 0
 
+    # 2. Check Video File
+    if not os.path.exists(video_path):
+        print("[ERROR] Video file does not exist on disk!")
+        return 0
+    
+    file_size = os.path.getsize(video_path)
+    # print(f"[DEBUG] Video File Size: {file_size} bytes")
+    if file_size == 0:
+        print("[ERROR] Uploaded video is 0 bytes (Empty)!")
+        return 0
+
+    # 3. Open Video
+    cap = cv.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("[ERROR] OpenCV cannot open the video file. Missing FFmpeg?")
+        return 0
+
+    user_path = os.path.join(DATASET_DIR, username)
+    os.makedirs(user_path, exist_ok=True)
+    
+    count = 0
+    frames_read = 0
+    margin = 0.25 
+    
     while True:
-        try:
-            if not cap.isOpened():
-                time.sleep(1.0)
-                cap = cv.VideoCapture(ESP32_URL, cv.CAP_FFMPEG)
-                if cap.isOpened():
-                    detector, recognizer = initialize_models(320, 240)
-                continue
-
-            ret, frame = cap.read()
-            if not ret:
-                cap.release()
-                continue
-            
-            frame_count += 1
-            if frame_count % FRAME_SKIP_RATE != 0:
-                with lock: outputFrame = frame.copy()
-                continue
-
-            h, w = frame.shape[:2]
-            
-            # AI Processing
-            img_small = cv.resize(frame, (320, 240))
-            detector.setInputSize((320, 240))
-            faces = detector.detect(img_small)
-            
-            scale_x = w / 320
-            scale_y = h / 240
-            
-            if faces[1] is not None:
-                sorted_faces = sorted(faces[1], key=lambda x: x[2]*x[3], reverse=True)
-                face = sorted_faces[0]
+        ret, frame = cap.read()
+        if not ret: 
+            break
+        frames_read += 1
+        
+        h_img, w_img = frame.shape[:2]
+        detector.setInputSize((w_img, h_img))
+        _, faces = detector.detect(frame)
+        
+        if faces is not None:
+             for face in faces:
                 confidence = face[-1]
+                if confidence < 0.6: continue 
+
+                box = face[:4].astype(int)
+                x, y, w, h = box
                 
-                if confidence >= CONFIDENCE_THRESHOLD:
-                    box = list(map(int, face[:4]))
-                    box[0] = int(box[0] * scale_x)
-                    box[1] = int(box[1] * scale_y)
-                    box[2] = int(box[2] * scale_x)
-                    box[3] = int(box[3] * scale_y)
-                    
-                    cv.rectangle(frame, (box[0], box[1]), (box[0]+box[2], box[1]+box[3]), (0, 255, 0), 2)
-
-                    if is_capturing:
-                        face_scaled = face.copy()
-                        face_scaled[:4] = box
-                        for k in range(4, 14):
-                            face_scaled[k] *= (scale_x if k % 2 == 0 else scale_y)
-                            
-                        face_aligned = recognizer.alignCrop(frame, face_scaled)
-                        gray = cv.cvtColor(face_aligned, cv.COLOR_BGR2GRAY)
-                        score = cv.Laplacian(gray, cv.CV_64F).var()
-                        
-                        elapsed = time.time() - capture_start_time
-                        if elapsed > TIME_LIMIT_SEC or images_captured >= MAX_IMAGES:
-                            is_capturing = False
-                            capture_message = "Done. Click Train."
-                        elif score > BLUR_THRESHOLD:
-                            user_path = os.path.join(SAVE_DIR, capture_user_id)
-                            os.makedirs(user_path, exist_ok=True)
-                            fname = os.path.join(user_path, f"{capture_user_id}_{images_captured:04d}.jpg")
-                            save_queue.put((fname, face_aligned))
-                            images_captured += 1
-                            capture_message = f"Capturing... {int(TIME_LIMIT_SEC - elapsed)}s"
-                        else:
-                            cv.putText(frame, "Blurry", (box[0], box[1]-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2)
-
-            with lock: outputFrame = frame.copy()
-
-        except Exception:
-            pass
-
-def generate():
-    global outputFrame, lock
-    while True:
-        with lock:
-            if outputFrame is None: continue
-            (flag, encodedImage) = cv.imencode(".jpg", outputFrame, [int(cv.IMWRITE_JPEG_QUALITY), 70])
-            if not flag: continue
-        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encodedImage) + b'\r\n')
-
-@app.route("/")
-def index(): return render_template("index.html")
-
-@app.route("/video_feed")
-def video_feed(): return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
-
-@app.route("/start_capture", methods=["POST"])
-def start_capture():
-    global is_capturing, capture_user_id, images_captured, capture_start_time, capture_message
-    data = request.json
-    user_id = data.get("user_id", "unknown").strip().replace(" ", "_")
-    if not user_id: return jsonify({"status": "error"})
+                # Padding
+                x_new = max(0, int(x - w * margin))
+                y_new = max(0, int(y - h * margin))
+                w_new = min(w_img - x_new, int(w * (1 + 2 * margin)))
+                h_new = min(h_img - y_new, int(h * (1 + 2 * margin)))
+                
+                crop = frame[y_new:y_new+h_new, x_new:x_new+w_new]
+                
+                if crop.size > 0:
+                    img_name = f"{count}.jpg"
+                    cv.imwrite(os.path.join(user_path, img_name), crop)
+                    count += 1
+                    if count >= 100: break 
+        if count >= 100: break
+        
+    cap.release()
+    # print(f"[RESULT] Read {frames_read} frames. Saved {count} faces.")
     
-    capture_user_id = user_id
-    images_captured = 0
-    capture_start_time = time.time()
-    is_capturing = True
-    capture_message = "Starting..."
+    if frames_read == 0:
+        print("[ERROR] Video was opened but contained 0 frames.")
+    elif count == 0:
+        print("[WARNING] Frames were read but NO faces were detected.")
+
+    return count
+
+@app.route("/upload_video", methods=["POST"])
+def upload_video():
+    if 'video' not in request.files: return jsonify({"status": "error"}), 400
+    file = request.files['video']
+    username = request.form['user_id']
+    save_path = os.path.join(TEMP_DIR, f"{username}.webm")
+    file.save(save_path)
+    print(f"[UPLOAD] Saved {username}.webm ({os.path.getsize(save_path)} bytes)")
     return jsonify({"status": "success"})
 
-@app.route("/train_model", methods=["POST"])
-def train_model():
-    # --- HERE IS THE MAGIC FIX ---
-    # Instead of training, we write a trigger file and exit.
-    # The Supervisor script will see this file.
-    with open("trigger_training.txt", "w") as f:
-        f.write("start")
+@app.route("/process_pending_video", methods=["POST"])
+def process_pending_video():
+    username = request.json.get("username")
+    video_path = os.path.join(TEMP_DIR, f"{username}.webm")
     
-    return jsonify({
-        "status": "success", 
-        "message": "System restarting to Train... Please wait 15 seconds."
-    })
+    print(f"\n[START] Processing Request for: {username}")
+    
+    if not os.path.exists(video_path):
+        print("[ERROR] Video path not found.")
+        return jsonify({"status": "error", "message": "Video missing"}), 404
+        
+    count = process_video_to_dataset(video_path, username)
+    
+    with open(TRIGGER_FILE, "w") as f: f.write("start")
+    
+    if os.path.exists(video_path): os.remove(video_path)
+    
+    print(f"[DONE] Finished processing. Count: {count}\n")
+    return jsonify({"status": "success", "count": count})
 
-@app.route("/get_status")
-def get_status():
-    global images_captured, is_capturing, capture_message
-    user_count = 0
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "rb") as f:
-                user_count = len(pickle.load(f))
-        except: pass
-
-    return jsonify({
-        "count": images_captured,
-        "max": MAX_IMAGES,
-        "capturing": is_capturing,
-        "message": capture_message,
-        "total_users": user_count
-    })
+@app.route("/delete_temp_video", methods=["POST"])
+def delete_temp_video():
+    username = request.json.get("username")
+    video_path = os.path.join(TEMP_DIR, f"{username}.webm")
+    if os.path.exists(video_path): os.remove(video_path)
+    return jsonify({"status": "success"})
 
 if __name__ == "__main__":
-    t = threading.Thread(target=camera_processing_thread)
-    t.daemon = True
-    t.start()
-    app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+    print("[INFO] Enrollment App Running on Port 5002 (DEBUG MODE)")
+    app.run(host="0.0.0.0", port=5002, threaded=True)

@@ -1,79 +1,116 @@
-# train_worker.py -> to Process Captured Images and Update Face Embedding Database
-
-
-#####################################################################################################################################
-
+# backend/train_worker.py
+import os
+import time
+import pickle
 import cv2 as cv
 import numpy as np
-import os
-import pickle
-import sys
+import requests
+import gc
+import random
 
 # --- CONFIGURATION ---
-SAVE_DIR = "dataset"
-DB_FILE = "face_encodings2.pickle"
-SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATASET_DIR = os.path.join(BASE_DIR, "dataset")
+DB_FILE = os.path.join(BASE_DIR, "face_encodings.pickle") 
+TRIGGER_FILE = os.path.join(BASE_DIR, "trigger_training.txt")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 
-def main():
-    print("-" * 50)
-    print("[TRAINING WORKER] Starting Process...")
-    print("-" * 50)
+YUNET_PATH = os.path.join(MODEL_DIR, "face_detection_yunet_2023mar.onnx")
+SFACE_PATH = os.path.join(MODEL_DIR, "face_recognition_sface_2021dec.onnx")
 
-    if not os.path.exists(SFACE_PATH):
-        print("[ERROR] Model file missing.")
-        return
+# Load models
+detector = cv.FaceDetectorYN.create(YUNET_PATH, "", (320, 320), 0.9, 0.3, 5000)
+recognizer = cv.FaceRecognizerSF.create(SFACE_PATH, "")
 
-    try:
-        recognizer = cv.FaceRecognizerSF.create(SFACE_PATH, "")
-    except Exception as e:
-        print(f"[ERROR] Model Load Failed: {e}")
-        return
-
-    database = {}
+def train():
+    print("[WORKER] Training started...")
     
-    if not os.path.exists(SAVE_DIR):
-        print("[ERROR] Dataset folder missing.")
-        return
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, "rb") as f: db = pickle.load(f)
+        except: db = {}
+    else: db = {}
 
-    users = [d for d in os.listdir(SAVE_DIR) if os.path.isdir(os.path.join(SAVE_DIR, d))]
-    count = 0
-    
-    for user_name in users:
-        print(f" -> Processing user: {user_name}")
-        user_path = os.path.join(SAVE_DIR, user_name)
-        image_files = os.listdir(user_path)
-        embeddings = []
+    users = os.listdir(DATASET_DIR)
+    updated = False
 
-        if not image_files: continue
+    for user_id in users:
+        if user_id in db: continue 
         
-        for img_file in image_files:
+        user_path = os.path.join(DATASET_DIR, user_id)
+        if not os.path.isdir(user_path): continue
+
+        print(f"[WORKER] Processing new user: {user_id}")
+        embeddings = []
+        
+        # Get all images
+        all_images = os.listdir(user_path)
+        
+        # --- CRASH PREVENTER 1: LIMIT TO 20 IMAGES ---
+        # We only take 20 random images. This is enough for accuracy 
+        # but saves huge amounts of RAM.
+        if len(all_images) > 20:
+            images_to_process = random.sample(all_images, 20)
+        else:
+            images_to_process = all_images
+            
+        # print(f"[WORKER] Selected {len(images_to_process)} images for training.")
+
+        for i, img_name in enumerate(images_to_process):
             try:
-                img_path = os.path.join(user_path, img_file)
+                img_path = os.path.join(user_path, img_name)
                 img = cv.imread(img_path)
                 if img is None: continue
                 
-                feat = recognizer.feature(img)
-                embeddings.append(feat.flatten())
-            except: pass
+                h, w = img.shape[:2]
+                detector.setInputSize((w, h))
+                _, faces = detector.detect(img)
+                
+                if faces is not None:
+                    face_align = recognizer.alignCrop(img, faces[0])
+                    feat = recognizer.feature(face_align)
+                    embeddings.append(feat[0])
+                
+                # --- CRASH PREVENTER 2: SLEEP BETWEEN IMAGES ---
+                # Let CPU cool down after every single image
+                time.sleep(0.05) 
+                
+            except Exception as e:
+                print(f"[WARNING] Skipped image {img_name}: {e}")
 
         if embeddings:
-            embeddings_np = np.array(embeddings)
-            avg_embedding = np.mean(embeddings_np, axis=0)
-            norm = np.linalg.norm(avg_embedding)
-            if norm > 0:
-                avg_embedding = avg_embedding / norm
+            avg = np.mean(embeddings, axis=0)
+            avg = avg / np.linalg.norm(avg)
+            db[user_id] = avg
+            updated = True
+            # print(f"[WORKER] Added {user_id}")
             
-            database[user_name] = avg_embedding
-            count += 1
+            # Save and Clean RAM immediately
+            with open(DB_FILE, "wb") as f: pickle.dump(db, f)
+            del embeddings
+            gc.collect()
 
-    try:
-        with open(DB_FILE, "wb") as f:
-            pickle.dump(database, f)
-        print("-" * 50)
-        print(f"[SUCCESS] Database Updated. Total Users: {count}")
-        print("-" * 50)
-    except Exception as e:
-        print(f"[ERROR] Saving Pickle: {e}")
+    if updated:
+        try:
+            requests.get("http://localhost:5000/reload_db", timeout=2)
+            print("[WORKER] Main System Reloaded.")
+        except:
+            pass
+
+def main():
+    print("[WORKER] Ready. Waiting for trigger...")
+    while True:
+        if os.path.exists(TRIGGER_FILE):
+            try:
+                with open(TRIGGER_FILE, "r") as f: content = f.read().strip()
+                if content == "start":
+                    time.sleep(2) # Wait for file writes to finish
+                    train()
+                    if os.path.exists(TRIGGER_FILE):
+                        os.remove(TRIGGER_FILE)
+            except Exception as e:
+                print(f"[ERROR] Worker error: {e}")
+        time.sleep(3)
 
 if __name__ == "__main__":
     main()
