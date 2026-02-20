@@ -1,4 +1,8 @@
-# backend/app.py
+# app.py -> code for collecting 200 images in a 60-second video and storing them in a dataset folder == main code used in the project
+#------------------------------------------------------------------------------------------------------------------------------------
+
+
+#IMPORTS
 import cv2 as cv
 import numpy as np
 import os
@@ -8,16 +12,22 @@ from flask_cors import CORS
 import threading
 import queue
 import pickle
-import cv2 # Ensure cv2 is imported for VideoWriter
+import cv2 
 import shutil
+import logging
 
-# --- CONFIGURATION ---
+
+# CONFIGURATION
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMP_DIR = os.path.join(BASE_DIR, "temp_videos")
 DATASET_DIR = os.path.join(BASE_DIR, "dataset")
 TRIGGER_FILE = os.path.join(BASE_DIR, "trigger_training.txt")
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 YUNET_PATH = os.path.join(MODEL_DIR, "face_detection_yunet_2023mar.onnx")
+
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR) 
 
 # Create directories
 os.makedirs(TEMP_DIR, exist_ok=True)
@@ -30,7 +40,7 @@ def process_video_to_dataset(video_path, username):
     print(f"[DEBUG] Processing video for {username}")
     print(f"[DEBUG] Video Path: {video_path}")
 
-    # 1. Check Model
+    # Check Model
     if not os.path.exists(YUNET_PATH):
         print(f"[ERROR] Model missing at: {YUNET_PATH}")
         return 0
@@ -42,7 +52,7 @@ def process_video_to_dataset(video_path, username):
         print(f"[ERROR] Failed to load AI Model: {e}")
         return 0
 
-    # 2. Check Video File
+    # Check Video File
     if not os.path.exists(video_path):
         print("[ERROR] Video file does not exist on disk!")
         return 0
@@ -52,7 +62,7 @@ def process_video_to_dataset(video_path, username):
         print("[ERROR] Uploaded video is 0 bytes (Empty)!")
         return 0
 
-    # 3. Open Video
+    # Open Video
     cap = cv.VideoCapture(video_path)
     if not cap.isOpened():
         print("[ERROR] OpenCV cannot open the video file. Missing FFmpeg?")
@@ -107,17 +117,19 @@ def process_video_to_dataset(video_path, username):
 
     return count
 
+
+# FLASK ROUTES
 @app.route("/upload_video", methods=["POST"])
 def upload_video():
     if 'video' not in request.files: return jsonify({"status": "error"}), 400
     file = request.files['video']
     username = request.form['user_id']
     
-    # 1. Save Raw Temp File (For AI Processing)
+    # Save Raw Temp File (For AI Processing)
     temp_path = os.path.join(TEMP_DIR, f"{username}.webm")
     file.save(temp_path)
     
-    # 2. Save Copy for Admin Dashboard (Foolproof Method)
+    # Save Copy for Admin Dashboard (Foolproof Method)
     # We simply copy the raw webm file to the dataset folder.
     # We name it .mp4 so the frontend accepts it (Browsers will play it regardless of extension)
     dataset_path = os.path.join(DATASET_DIR, f"{username}.mp4")
