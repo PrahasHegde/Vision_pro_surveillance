@@ -1,0 +1,34 @@
+[
+    {
+        "id": "1768561657296",
+        "name": "Harshith",
+        "action": "granted",
+        "timestamp": "12:07:37",
+        "date": "2026-01-16",
+        "confidence": 93
+    },
+    {
+        "id": "1768513198190",
+        "name": "Deepika Sree ",
+        "action": "granted",
+        "timestamp": "22:39:58",
+        "date": "2026-01-15",
+        "confidence": 93
+    },
+    {
+        "id": "1768428346415",
+        "name": "Harshith",
+        "action": "granted",
+        "timestamp": "23:05:46",
+        "date": "2026-01-14",
+        "confidence": 97
+    },
+    {
+        "id": "1768428332172",
+        "name": "Harshith",
+        "action": "granted",
+        "timestamp": "23:05:32",
+        "date": "2026-01-14",
+        "confidence": 91
+    }
+]
