@@ -1,4 +1,7 @@
-# backend/train_worker.py
+# backend/train_worker.py -> backend code to convert images to an embedding vector == part of main code
+#-----------------------------------------------------------------------------------------------------
+
+# IMPORTS
 import os
 import time
 import pickle
@@ -8,13 +11,15 @@ import requests
 import gc
 import random
 
-# --- CONFIGURATION ---
+
+# CONFIGURATION
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATASET_DIR = os.path.join(BASE_DIR, "dataset")
 DB_FILE = os.path.join(BASE_DIR, "face_encodings.pickle") 
 TRIGGER_FILE = os.path.join(BASE_DIR, "trigger_training.txt")
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 
+# MODEL PATHS
 YUNET_PATH = os.path.join(MODEL_DIR, "face_detection_yunet_2023mar.onnx")
 SFACE_PATH = os.path.join(MODEL_DIR, "face_recognition_sface_2021dec.onnx")
 
@@ -46,9 +51,8 @@ def train():
         # Get all images
         all_images = os.listdir(user_path)
         
-        # --- CRASH PREVENTER 1: LIMIT TO 20 IMAGES ---
-        # We only take 20 random images. This is enough for accuracy 
-        # but saves huge amounts of RAM.
+        # CRASH PREVENTER 1: LIMIT TO 20 IMAGES
+        # We only take 20 random images. This is enough for accuracy
         if len(all_images) > 20:
             images_to_process = random.sample(all_images, 20)
         else:
@@ -71,7 +75,7 @@ def train():
                     feat = recognizer.feature(face_align)
                     embeddings.append(feat[0])
                 
-                # --- CRASH PREVENTER 2: SLEEP BETWEEN IMAGES ---
+                # CRASH PREVENTER 2: SLEEP BETWEEN IMAGES
                 # Let CPU cool down after every single image
                 time.sleep(0.05) 
                 
