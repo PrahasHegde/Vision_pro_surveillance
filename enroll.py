@@ -1,15 +1,16 @@
-# enroll.py -> one time code to get face embeddings from captured images and save to database
+# enroll.py -> one-time code to get face embeddings from captured images and save to database (not part of main code)
+#-------------------------------------------------------------------------------------------------------------------
 
-###################################################################################################################################
 
-
+# IMPORTS
 import cv2 as cv
 import numpy as np
 import os
 import pickle
 import sys
 
-# --- CONFIGURATION ---
+
+# CONFIGURATION
 SAVE_DIR = "dataset"
 DB_FILE = "face_encodings.pickle"
 SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
@@ -17,19 +18,19 @@ SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
 def main():
     print("--- FACE RECOGNITION TRAINING TOOL ---")
     
-    # 1. Check if Model Exists
+    # Check if Model Exists
     if not os.path.exists(SFACE_PATH):
         print(f"[ERROR] Model file not found: {SFACE_PATH}")
         print("Please download it using: wget https://github.com/opencv/opencv_zoo/raw/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx")
         sys.exit()
 
-    # 2. Check if Dataset Exists
+    # Check if Dataset Exists
     if not os.path.exists(SAVE_DIR):
         print(f"[ERROR] Dataset directory '{SAVE_DIR}' not found.")
         print("Run the capture app first to collect images.")
         sys.exit()
 
-    # 3. Initialize SFace Model
+    # Initialize SFace Model
     try:
         recognizer = cv.FaceRecognizerSF.create(SFACE_PATH, "")
     except Exception as e:
@@ -38,7 +39,7 @@ def main():
 
     database = {}
     
-    # 4. Get List of Users
+    # Get List of Users
     users = [d for d in os.listdir(SAVE_DIR) if os.path.isdir(os.path.join(SAVE_DIR, d))]
     
     if not users:
@@ -48,7 +49,7 @@ def main():
     print(f"[INFO] Found {len(users)} users: {users}")
     print("-" * 40)
 
-    # 5. Process Each User
+    # Process Each User
     for user_name in users:
         print(f"Processing '{user_name}'...", end=" ", flush=True)
         
@@ -81,14 +82,14 @@ def main():
             if feat is not None:
                 embeddings.append(feat.flatten())
 
-        # 6. Average and Normalize
+        # Average and Normalize
         if embeddings:
             embeddings_np = np.array(embeddings)
             
-            # Calculate Mean Vector (The "Average Face")
+            # Calculate Mean Vector 
             avg_embedding = np.mean(embeddings_np, axis=0)
             
-            # Normalize (Critical for Cosine Similarity)
+            # Normalize
             norm = np.linalg.norm(avg_embedding)
             if norm > 0:
                 avg_embedding = avg_embedding / norm
@@ -99,7 +100,7 @@ def main():
         else:
             print("[FAILED] No valid features found.")
 
-    # 7. Save to Disk
+    # Save to Disk
     print("-" * 40)
     if database:
         try:
