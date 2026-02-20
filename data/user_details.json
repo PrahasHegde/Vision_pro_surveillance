@@ -1,35 +1,24 @@
 [
     {
-        "id": "1771424194205",
+        "id": "1771437493315",
         "name": "testH",
         "email": "testh@gmail.com",
         "username": "testH",
         "password": "1234567890",
         "dob": "2002-01-28",
-        "timestamp": "2/18/2026, 3:16:34 PM",
+        "timestamp": "2/18/2026, 6:58:13 PM",
         "status": "active",
-        "registeredAt": "2026-02-18T15:16:47.457975"
+        "registeredAt": "2026-02-18T18:59:45.358550"
     },
     {
-        "id": "1771428007719",
-        "name": "testP",
-        "email": "testp@gmail.com",
-        "username": "testP",
-        "password": "1234567890",
-        "dob": "2002-01-28",
-        "timestamp": "2/18/2026, 4:20:07 PM",
-        "status": "active",
-        "registeredAt": "2026-02-18T16:20:59.440135"
-    },
-    {
-        "id": "1771429685964",
+        "id": "1771585753233",
         "name": "testY",
         "email": "testy@gmail.com",
         "username": "testY",
         "password": "1234567890",
         "dob": "2002-01-28",
-        "timestamp": "2/18/2026, 4:48:05 PM",
+        "timestamp": "2/20/2026, 12:09:13 PM",
         "status": "active",
-        "registeredAt": "2026-02-18T16:48:45.215627"
+        "registeredAt": "2026-02-20T12:12:33.326038"
     }
 ]

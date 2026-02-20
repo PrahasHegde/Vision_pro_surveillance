@@ -13,7 +13,7 @@ scripts = {
     "server.py": None,       # Port 5001 (Data API)
     "app.py": None,          # Port 5002 (Video Processing)
     "train_worker.py": None, # Background Trainer
-    "z2.py": None     # Port 5000 (Main System)
+    "main_check.py": None     # Port 5000 (Main System)
 }
 
 def start_script(script_name):

@@ -2,31 +2,14 @@
 import cv2 as cv
 import numpy as np
 import os
-<<<<<<< HEAD
 import sys
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-=======
 import threading
 import queue
 import pickle
-from flask import Flask, render_template, Response, jsonify, request
-
-# --- CONFIGURATION ---
-ESP32_URL = "http://192.168.0.196:81/stream"
-SAVE_DIR = "dataset"
-DB_FILE = "face_encodings2.pickle"
-MAX_IMAGES = 200
-TIME_LIMIT_SEC = 60
-CONFIDENCE_THRESHOLD = 0.9
-BLUR_THRESHOLD = 35 
-FRAME_SKIP_RATE = 3 
-YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"
-SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
->>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
-
-app = Flask(__name__)
-CORS(app)
+import cv2 # Ensure cv2 is imported for VideoWriter
+import shutil
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -36,8 +19,12 @@ TRIGGER_FILE = os.path.join(BASE_DIR, "trigger_training.txt")
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 YUNET_PATH = os.path.join(MODEL_DIR, "face_detection_yunet_2023mar.onnx")
 
+# Create directories
 os.makedirs(TEMP_DIR, exist_ok=True)
 os.makedirs(DATASET_DIR, exist_ok=True)
+
+app = Flask(__name__)
+CORS(app)
 
 def process_video_to_dataset(video_path, username):
     print(f"[DEBUG] Processing video for {username}")
@@ -61,7 +48,6 @@ def process_video_to_dataset(video_path, username):
         return 0
     
     file_size = os.path.getsize(video_path)
-    # print(f"[DEBUG] Video File Size: {file_size} bytes")
     if file_size == 0:
         print("[ERROR] Uploaded video is 0 bytes (Empty)!")
         return 0
@@ -113,7 +99,6 @@ def process_video_to_dataset(video_path, username):
         if count >= 100: break
         
     cap.release()
-    # print(f"[RESULT] Read {frames_read} frames. Saved {count} faces.")
     
     if frames_read == 0:
         print("[ERROR] Video was opened but contained 0 frames.")
@@ -127,9 +112,21 @@ def upload_video():
     if 'video' not in request.files: return jsonify({"status": "error"}), 400
     file = request.files['video']
     username = request.form['user_id']
-    save_path = os.path.join(TEMP_DIR, f"{username}.webm")
-    file.save(save_path)
-    print(f"[UPLOAD] Saved {username}.webm ({os.path.getsize(save_path)} bytes)")
+    
+    # 1. Save Raw Temp File (For AI Processing)
+    temp_path = os.path.join(TEMP_DIR, f"{username}.webm")
+    file.save(temp_path)
+    
+    # 2. Save Copy for Admin Dashboard (Foolproof Method)
+    # We simply copy the raw webm file to the dataset folder.
+    # We name it .mp4 so the frontend accepts it (Browsers will play it regardless of extension)
+    dataset_path = os.path.join(DATASET_DIR, f"{username}.mp4")
+    try:
+        shutil.copy(temp_path, dataset_path)
+        print(f"[UPLOAD] Saved Admin Video: {dataset_path}")
+    except Exception as e:
+        print(f"[ERROR] Copy failed: {e}")
+
     return jsonify({"status": "success"})
 
 @app.route("/process_pending_video", methods=["POST"])
@@ -147,6 +144,8 @@ def process_pending_video():
     
     with open(TRIGGER_FILE, "w") as f: f.write("start")
     
+    # Clean up temp file (Raw WebM), but keep the MP4 in dataset for Admin logs?
+    # Usually we delete temp, but if you want logs to work forever, keep the MP4.
     if os.path.exists(video_path): os.remove(video_path)
     
     print(f"[DONE] Finished processing. Count: {count}\n")
@@ -155,8 +154,14 @@ def process_pending_video():
 @app.route("/delete_temp_video", methods=["POST"])
 def delete_temp_video():
     username = request.json.get("username")
+    # Delete the temp file
     video_path = os.path.join(TEMP_DIR, f"{username}.webm")
     if os.path.exists(video_path): os.remove(video_path)
+    
+    # Optional: Delete the Admin video too if denied?
+    # admin_video = os.path.join(DATASET_DIR, f"{username}.mp4")
+    # if os.path.exists(admin_video): os.remove(admin_video)
+    
     return jsonify({"status": "success"})
 
 if __name__ == "__main__":
