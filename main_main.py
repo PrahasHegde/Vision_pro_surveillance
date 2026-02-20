@@ -1,9 +1,9 @@
-<<<<<<< HEAD
-#main_main -> code for running entire system- liveness detection, face recognition, and lock control
-=======
+#main_main -> code for running entire system- liveness detection, face recognition, and lock control  (PREVIOUS VERSION) == NOT PART OF MAIN CODE
 #complete code for liveness detection and face recognition access control system with arduino integration and UI
->>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
+#-------------------------------------------------------------------------------------------------------------------------------------------------
 
+
+#IMPORTS
 import cv2 as cv
 import numpy as np
 import os
@@ -14,19 +14,10 @@ import sys
 import gc
 import serial
 from flask import Flask, Response, render_template_string, jsonify
-<<<<<<< HEAD
 import serial
 from flask import Flask, Response, render_template_string, jsonify
-# from flask_cors import CORS 
-=======
->>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
 
-# ==========================================================
-# CONFIGURATION
-# ==========================================================
-<<<<<<< HEAD
-URL_LEFT  = "http://192.168.0.6:81/stream"
-URL_RIGHT = "http://192.168.0.5:81/stream"
+
 
 app = Flask(__name__)
 
@@ -36,42 +27,40 @@ def add_cors_headers(response):
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return response
-# --------------------------------------
+
 
 class AppState:
     STATUS = "IDLE"
-=======
+    
+
+# CONFIGURATION
 URL_LEFT  = "http://192.168.0.196:81/stream"
 URL_RIGHT = "http://192.168.0.197:81/stream"
->>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
-
 NPZ_PATH = 'stereo_calibration.npz'
 DB_FILE = "face_encodings2.pickle"
 YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"
 SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
 
-# --- ARDUINO CONFIGURATION (NEW) ---
+
+# ARDUINO CONFIGURATION
 SERIAL_PORT = '/dev/ttyACM0'
 BAUD_RATE = 9600
-# -----------------------------------
 
-# --- OPTIMIZATION SETTINGS ---
+# OPTIMIZATION SETTINGS
 DISPLAY_WIDTH, DISPLAY_HEIGHT = 640, 480
 SCALE_FACTOR = 0.5 
 PROC_W = int(DISPLAY_WIDTH * SCALE_FACTOR)
 PROC_H = int(DISPLAY_HEIGHT * SCALE_FACTOR)
-
 SKIP_FRAMES = 3 
-# -----------------------------
 
+# LIVENESS PARAMETERS
 MATCH_THRESHOLD = 0.4
 LIVENESS_FRAMES_REQUIRED = 4
 DEPTH_THRESHOLD_METERS = 0.025
 SWAP_CAMERAS = True
 
-# ==========================================================
+
 # GLOBAL STATE
-# ==========================================================
 app = Flask(__name__)
 
 class AppState:
@@ -79,7 +68,7 @@ class AppState:
     MESSAGE = "SYSTEM INITIALIZING"
     USER_NAME = ""
     LIVENESS_PROGRESS = 0
-    LAST_UNLOCK_TIME = 0  # To prevent spamming the serial port
+    LAST_UNLOCK_TIME = 0  
     
 state = AppState()
 outputFrame = None
@@ -87,9 +76,9 @@ lock = threading.Lock()
 face_db = {}
 arduino = None
 
-# ==========================================================
+
+
 # ARDUINO SETUP
-# ==========================================================
 try:
     arduino = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
     time.sleep(2) # Wait for Arduino restart
@@ -106,9 +95,9 @@ def trigger_solenoid():
         except Exception as e:
             print(f"[ERROR] Serial write failed: {e}")
 
-# ==========================================================
-# INITIALIZATION (UNCHANGED)
-# ==========================================================
+
+
+# INITIALIZATION
 if not os.path.exists(NPZ_PATH):
     sys.exit(f"CRITICAL: {NPZ_PATH} not found.")
 
@@ -137,9 +126,9 @@ if os.path.exists(DB_FILE):
     with open(DB_FILE, "rb") as f:
         face_db = pickle.load(f)
 
-# ==========================================================
-# HELPER FUNCTIONS (UNCHANGED)
-# ==========================================================
+
+
+# HELPER FUNCTIONS
 def get_depth_at_point(disp_map, x, y):
     if x < 0 or x >= PROC_W or y < 0 or y >= PROC_H: return None
     roi = disp_map[max(0, y-2):min(PROC_H, y+3), max(0, x-2):min(PROC_W, x+3)]
@@ -163,9 +152,9 @@ def match_face_embedding(feature_vector):
         return best_match, max_score
     return "Unknown", max_score
 
-# ==========================================================
+
+
 # PROCESSING THREAD
-# ==========================================================
 def processing_thread():
     global outputFrame, state
     
@@ -286,7 +275,7 @@ def processing_thread():
             if frame_idx % 100 == 0:
                 gc.collect()
 
-        # --- DRAWING OVERLAY ---
+        # DRAWING OVERLAY
         if cached_faces is not None:
             face = cached_faces[0]
             box = (face[:4] / SCALE_FACTOR).astype(int)
@@ -327,9 +316,8 @@ def processing_thread():
         with lock:
             outputFrame = vis_frame.copy()
 
-# ==========================================================
-# FLASK & NEW PROFESSIONAL UI
-# ==========================================================
+
+# STANDARD UI
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -566,6 +554,8 @@ HTML_TEMPLATE = """
 </html>
 """
 
+
+# ROUTES
 @app.route("/")
 def index():
     return render_template_string(HTML_TEMPLATE)
@@ -584,22 +574,20 @@ def video_feed():
             time.sleep(0.03)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
-<<<<<<< HEAD
-
 
 @app.route("/status")
 def status_api():
-    # 1. Create the data
+    # Create the data
     data = {
         "status": state.STATUS, 
         "message": state.MESSAGE, 
         "progress": state.LIVENESS_PROGRESS
     }
     
-    # 2. Turn it into a Flask Response object
+    # Turn it into a Flask Response object
     response = jsonify(data)
     
-    # 3. Manually STAMP the permission header onto this specific response
+    # Manually STAMP the permission header onto this specific response
     response.headers.add('Access-Control-Allow-Origin', '*')
     
     return response
@@ -617,11 +605,12 @@ def reload_db_api():
     except Exception as e:
         print(f"[ERROR] Reload failed: {e}")
         return jsonify({"status": "error"}), 500
-    
-# Add this endpoint to handle the Manual Unlock button
+
+
+
+# endpoint to handle the Manual Unlock button
 @app.route('/unlock', methods=['POST'])
 def manual_unlock():
-    """Handles manual unlock requests from Admin Dashboard"""
     global arduino
     try:
         # Check if arduino exists and is open
@@ -644,17 +633,17 @@ def manual_unlock():
         response = jsonify({"status": "error", "message": str(e)})
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 500
-=======
+
+
 @app.route("/status")
 def status_api():
     return jsonify({"status": state.STATUS, "message": state.MESSAGE, "progress": state.LIVENESS_PROGRESS})
->>>>>>> 40cb91ecf27a26c5de84c76a085e457390578696
+    
 
 if __name__ == "__main__":
     t = threading.Thread(target=processing_thread)
     t.daemon = True
     t.start()
-<<<<<<< HEAD
 
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
 =======
