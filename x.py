@@ -1,3 +1,8 @@
+# x.py -> copy of the liveness detection by epipolar geometry code == part of main project code 
+#----------------------------------------------------------------------------------------------
+
+
+# IMPORTS
 import cv2
 import numpy as np
 import os
@@ -5,20 +10,24 @@ import sys
 import time
 from collections import deque
 
-# ================= CONFIGURATION =================
+
+
+# CONFIGURATION
 URL_LEFT  = "http://192.168.0.6:81/stream"
 URL_RIGHT = "http://192.168.0.5:81/stream"
 
 CALIB_FILE  = "stereo2_maps.npz"
 YUNET_MODEL = "face_detection_yunet_2023mar.onnx"
 
-# --- TUNING ---
+# TUNING PARAMETERS
 # Real face if nose is between 1.5cm and 8.0cm ahead of eyes
 LIVENESS_MIN = 0.015 
 LIVENESS_MAX = 0.050 
 CONSENSUS_FRAMES = 3  # Number of frames to check before deciding
 
-# ================= SETUP =================
+
+
+# SETUP
 if not os.path.exists(YUNET_MODEL):
     sys.exit(f"Error: {YUNET_MODEL} not found.")
 
@@ -52,7 +61,8 @@ def get_depth(disparity_map, x, y):
     d_val = np.median(valid) / 16.0
     return (f_pixel * baseline) / d_val
 
-# ================= MAIN LOOP =================
+
+# MAIN LOOP
 print(f"Liveness Consensus Mode. Baseline: {baseline:.4f}m")
 print(f"Consensus Required: {CONSENSUS_FRAMES} frames")
 
@@ -100,15 +110,15 @@ while True:
                 avg_eyes = (z_re + z_le) / 2.0
                 diff = avg_eyes - z_no
 
-                # 1. Determine Frame Status
+                # Determine Frame Status
                 is_real_frame = False
                 if diff > LIVENESS_MIN and diff < LIVENESS_MAX:
                     is_real_frame = True
                 
-                # 2. Update History
+                # Update History
                 history.append(is_real_frame)
 
-                # 3. Calculate Consensus (Only status changes if ALL last 3 frames agree)
+                # Calculate Consensus (Only status changes if ALL last 3 frames agree)
                 status_text = "Analyzing..."
                 color = (255, 0, 0) # Blue (Uncertain)
 
@@ -123,7 +133,7 @@ while True:
                         # Mixed results (e.g., True, False, True) - maintain caution
                         status_text = "Scanning..." 
 
-                # 4. Print & Draw
+                # Print & Draw
                 print(f"Status: {status_text} | Diff: {diff:.3f}m | Eyes: {avg_eyes:.3f}m | Nose: {z_no:.3f}m")
 
                 # Visuals
