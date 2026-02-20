@@ -26,7 +26,7 @@ except:
 
 
 #ACTION
-time.sleep(2) # Wait for Arduino to reset
+time.sleep(2) # Arduino reset reset
 print("Sending Open Command...")
 ser.write(b'O')
 print("Sent! Did the lock move?")
