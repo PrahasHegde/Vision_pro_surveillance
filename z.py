@@ -1,5 +1,9 @@
-#Final code for Vision Pro Access Control System
+# z.py -> Final code for Vision Pro Access Control System (version 1) == not part of main code
+#--------------------------------------------------------------------------------------------
 
+
+
+# IMPORTS
 import cv2 as cv
 import numpy as np
 import os
@@ -12,30 +16,29 @@ import serial
 from flask import Flask, Response, render_template_string, jsonify
 from collections import deque
 
-# ==========================================================
+
+
 # CONFIGURATION
-# ==========================================================
 URL_LEFT  = "http://192.168.0.6:81/stream"
 URL_RIGHT = "http://192.168.0.5:81/stream"
 CALIB_DIR = 'stereo2_maps.npz' 
-
-
 DB_FILE = "face_encodings2.pickle"
 YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"
 SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
 
-# --- LIVENESS TUNING ---
+
+# TUNING PARAMETERS
 LIVENESS_MIN = 0.012  # 1.2cm minimum protrusion
 LIVENESS_MAX = 0.050  # 6cm maximum protrusion
 CONSENSUS_FRAMES = 3  # Successive frames required
 
-# --- RECOGNITION TUNING ---
+# RECOGNITION TUNING
 MATCH_THRESHOLD = 0.40 # Adjust based on your environment
 SCALE_FACTOR = 0.5     # Processing scale for speed
 
-# ==========================================================
+
+
 # INITIALIZATION
-# ==========================================================
 print("[SYSTEM] Booting up Vision Pro...")
 
 if not os.path.exists(CALIB_DIR):
@@ -92,9 +95,9 @@ try:
     time.sleep(1)
 except: print("[WARN] Running without Arduino.")
 
-# ==========================================================
+
+
 # CORE LOGIC
-# ==========================================================
 def get_depth(disp, x, y):
     h, w = disp.shape
     if x < 5 or x >= w-5 or y < 5 or y >= h-5: return None
@@ -125,7 +128,7 @@ def processing_thread():
         if faces is not None:
             face = faces[0]
             
-            # --- PHASE 1: LIVENESS CHECK ---
+            # LIVENESS CHECK
             if state.STATUS in ["IDLE", "CHECKING_LIVENESS"]:
                 state.STATUS = "CHECKING_LIVENESS"
                 state.MESSAGE = "VERIFYING LIVENESS..."
@@ -151,7 +154,7 @@ def processing_thread():
                     state.STATUS = "RECOGNIZING" # Move to next phase
                     state.MESSAGE = "LIVENESS OK - SCANNING IDENTITY"
             
-            # --- PHASE 2: FACE RECOGNITION (ONLY AFTER LIVENESS) ---
+            # FACE RECOGNITION
             elif state.STATUS == "RECOGNIZING":
                 # Align and crop the confirmed 3D face
                 aligned = face_recognizer.alignCrop(rectL, face)
@@ -198,9 +201,9 @@ def processing_thread():
         with lock:
             outputFrame = vis_frame.copy()
 
-# ==========================================================
-# WEB UI (Simplified Dashboard)
-# ==========================================================
+
+
+# STANDARD UI
 HTML_TEMPLATE = """
 <!DOCTYPE html><html><head><title>Vision Pro Access</title>
 <style>
@@ -231,6 +234,9 @@ HTML_TEMPLATE = """
 </body></html>
 """
 
+
+
+# ROUTES
 @app.route("/")
 def index(): return render_template_string(HTML_TEMPLATE)
 
