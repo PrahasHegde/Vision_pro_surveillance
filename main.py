@@ -1,3 +1,7 @@
+# main.py -> main code of the project combining liveness detection, face recognition, and lock access control via Arduino == main code for the project
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 import cv2 as cv
 import numpy as np
 import os
@@ -12,33 +16,34 @@ from datetime import datetime
 from flask import Flask, Response, render_template_string, jsonify, request
 from collections import deque
 
-# ==========================================================
+
 # CONFIGURATION & PATHS
-# ==========================================================
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR) 
 
-# --- PATHS ---
+# PATHS
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data") 
-
 CALIB_DIR = os.path.join(BASE_DIR, 'stereo5_maps.npz')
 DB_FILE   = os.path.join(BASE_DIR, "face_encodings.pickle")
 LOG_FILE  = os.path.join(DATA_DIR, "user_logs.json") 
-USER_DETAILS_FILE = os.path.join(DATA_DIR, "user_details.json") # <--- NEW: Sync Source
+USER_DETAILS_FILE = os.path.join(DATA_DIR, "user_details.json") 
 
+# CAMERA URL's
 URL_LEFT  = "http://192.168.0.6:81/stream"
 URL_RIGHT = "http://192.168.0.5:81/stream"
 
+#MODEL PATHS
 YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"
 SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
 
+# LIVENESS PARAMETERS
 LIVENESS_MIN, LIVENESS_MAX = 0.012, 0.080 
 CONSENSUS_FRAMES, MATCH_THRESHOLD, SKIP_FRAMES = 3, 0.40, 2 
 
-# ==========================================================
+
+
 # LOGGING & SYNC UTILS
-# ==========================================================
 def log_event(name, action):
     """Saves event to data/user_logs.json"""
     entry = {
@@ -57,9 +62,9 @@ def log_event(name, action):
         # print(f"[LOG] {action}: {name}")
     except Exception as e: print(f"[LOG ERROR] {e}")
 
-# ==========================================================
+
+
 # INITIALIZATION
-# ==========================================================
 try:
     mapLx = np.load(os.path.join(CALIB_DIR, "stereoMapL_x.npy"))
     mapLy = np.load(os.path.join(CALIB_DIR, "stereoMapL_y.npy"))
@@ -80,9 +85,8 @@ for port in ['/dev/ttyACM0', '/dev/ttyUSB0', '/dev/ttyACM1']:
         break 
     except: continue
 
-# ==========================================================
+
 # STATE & DATABASE
-# ==========================================================
 class AppState:
     STATUS, MESSAGE, USER_NAME, PROGRESS, LAST_EVENT = "IDLE", "WAITING", "", 0, 0
 
@@ -96,7 +100,7 @@ def load_database():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "rb") as f: face_db = pickle.load(f)
         last_db_check = os.path.getmtime(DB_FILE)
-        # print(f"♻️ Database Reloaded: {len(face_db)} users.")
+        
 
 load_database()
 
@@ -104,9 +108,9 @@ face_detector = cv.FaceDetectorYN.create(YUNET_PATH, "", (320, 240), 0.7, 0.3, 1
 face_recognizer = cv.FaceRecognizerSF.create(SFACE_PATH, "")
 stereo = cv.StereoSGBM_create(minDisparity=0, numDisparities=64, blockSize=7, mode=cv.STEREO_SGBM_MODE_SGBM_3WAY)
 
-# ==========================================================
+
+
 # CORE UTILS
-# ==========================================================
 def trigger_lock():
     if arduino:
         try:
@@ -122,20 +126,20 @@ def get_depth(disp, x, y):
     valid = roi[roi > 16.0]
     return (f_pixel * baseline) / (np.median(valid) / 16.0) if len(valid) > 0 else None
 
-# --- NEW SYNC FUNCTION ---
+# NEW SYNC FUNCTION
 def sync_user_database():
     """Checks user_details.json and removes deleted users from Pickle file"""
     global face_db
     try:
         if not os.path.exists(USER_DETAILS_FILE) or not os.path.exists(DB_FILE): return
 
-        # 1. Get valid users from JSON (Source of Truth)
+        # Get valid users from JSON
         with open(USER_DETAILS_FILE, "r") as f:
             user_list = json.load(f)
             # Assuming 'name' is the key. Adjust if you use 'username' or 'id'.
             valid_names = [u.get('name') for u in user_list if u.get('name')]
 
-        # 2. Check for ghosts in Pickle
+        # Check for ghosts in Pickle
         current_db_names = list(face_db.keys())
         deleted_count = 0
         
@@ -144,7 +148,7 @@ def sync_user_database():
                 del face_db[db_name] # Remove from memory
                 deleted_count += 1
         
-        # 3. If we deleted anyone, save the Pickle file back to disk
+        # If we deleted anyone, save the Pickle file back to disk
         if deleted_count > 0:
             print(f"[SYNC] Removing {deleted_count} deleted users from Database...")
             with open(DB_FILE, "wb") as f:
@@ -153,20 +157,19 @@ def sync_user_database():
             
     except Exception as e:
         print(f"[SYNC ERROR] {e}")
-# -------------------------
+        
 
-# ==========================================================
+
 # MAIN PROCESSING
-# ==========================================================
 def processing_thread():
     global outputFrame, state, face_db, last_db_check
     capL, capR = cv.VideoCapture(URL_LEFT), cv.VideoCapture(URL_RIGHT)
     frame_count = 0
     
     while True:
-        # 1. Hot Reload & SYNC (Every 100 frames)
+        # Hot Reload & SYNC (Every 100 frames)
         if frame_count % 100 == 0:
-            sync_user_database() # <--- SYNC CHECK
+            sync_user_database() 
             if os.path.exists(DB_FILE):
                 if os.path.getmtime(DB_FILE) > last_db_check: load_database()
 
@@ -189,12 +192,12 @@ def processing_thread():
         # Use Raw frame for Visuals (No Black Borders)
         vis_frame = frameL.copy() 
 
-        # --- DOUBLE DETECTION LOGIC ---
+        # DOUBLE DETECTION LOGIC
         # A. Detect on VISUAL Frame (Raw) for Box Drawing
         face_detector.setInputSize((vis_frame.shape[1], vis_frame.shape[0]))
         _, faces_vis = face_detector.detect(vis_frame)
 
-        # B. Detect on SYSTEM Frame (Rectified) for Liveness/Recog
+        # Detect on SYSTEM Frame (Rectified) for Liveness/Recog
         face_detector.setInputSize((rectL.shape[1], rectL.shape[0]))
         _, faces_sys = face_detector.detect(rectL)
 
@@ -251,9 +254,8 @@ def processing_thread():
         with lock: outputFrame = vis_frame.copy()
         time.sleep(0.01)
 
-# ==========================================================
+
 # FLASK SERVER
-# ==========================================================
 app = Flask(__name__)
 
 @app.after_request
