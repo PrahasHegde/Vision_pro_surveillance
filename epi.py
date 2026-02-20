@@ -1,31 +1,34 @@
+# epi.py -> main code for liveness detection using epipolar geometry == part of the main code for the project
+#------------------------------------------------------------------------------------------------------------
+
+
+# IMPORTS
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-
 import cv2
 import numpy as np
 import sys
 from collections import deque
 
-# ==========================================================
-# CONFIG
-# ==========================================================
+
+# CONFIGURATION
 NPZ_PATH = 'stereo_calibration.npz'
 YUNET_MODEL = 'face_detection_yunet_2023mar.onnx'
 
+#CAMERA URL's
 URL_LEFT  = "http://192.168.0.196:81/stream"
 URL_RIGHT = "http://192.168.0.197:81/stream"
 
+#RESOLUTION
 WIDTH, HEIGHT = 640, 480
 SWAP_CAMERAS = True
-
 NUM_DISPARITIES = 16 * 10
 BLOCK_SIZE = 5
-
 REQUIRED_REAL_FRAMES = 3
 
-# ==========================================================
+
+
 # LOAD MODELS & CALIBRATION
-# ==========================================================
 if not os.path.exists(YUNET_MODEL):
     sys.exit("YuNet model missing")
 
@@ -55,6 +58,7 @@ map1_R, map2_R = cv2.initUndistortRectifyMap(
     K_R, D_R, R2, P2, (WIDTH, HEIGHT), cv2.CV_16SC2
 )
 
+#SGBM PIPELINE
 stereo = cv2.StereoSGBM_create(
     minDisparity=-16,
     numDisparities=NUM_DISPARITIES,
@@ -66,9 +70,9 @@ stereo = cv2.StereoSGBM_create(
     speckleRange=32
 )
 
-# ==========================================================
+
+
 # HELPERS
-# ==========================================================
 def get_disp(disp, x, y, w=7):
     h, W = disp.shape
     x0, x1 = max(0, x-w), min(W, x+w+1)
@@ -80,9 +84,8 @@ def get_disp(disp, x, y, w=7):
 def disp_to_depth(d):
     return (f_pixel * B_meter) / d if d > 0 else None
 
-# ==========================================================
+
 # MAIN LOOP
-# ==========================================================
 capL = cv2.VideoCapture(URL_LEFT)
 capR = cv2.VideoCapture(URL_RIGHT)
 
