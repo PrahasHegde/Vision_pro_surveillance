@@ -1,19 +1,26 @@
-# launcher.py
+# launcher.py -> code used for running server, app, train_worker and main.py simultaneously == part of the main code for the project
+#-----------------------------------------------------------------------------------------------------------------------------------
+
+
+
+# IMPORTS
 import subprocess
 import time
 import os
 import signal
 import sys
 
-# --- CONFIGURATION ---
+
+# PATH
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 # Scripts to run
 scripts = {
     "server.py": None,       # Port 5001 (Data API)
     "app.py": None,          # Port 5002 (Video Processing)
     "train_worker.py": None, # Background Trainer
-    "main_check.py": None     # Port 5000 (Main System)
+    "main.py": None     # Port 5000 (Main System)
 }
 
 def start_script(script_name):
@@ -39,7 +46,7 @@ for script in scripts:
 
 # print("[LAUNCHER] System Online. Monitoring processes...")
 
-# Monitor Loop (Restarts crashed scripts)
+# Monitor Loop (Restarts crashed scripts
 try:
     while True:
         for script, process in scripts.items():
