@@ -1,18 +1,24 @@
+# delete_user.py -> code to remove user/embeddings from the pkl file == part of the main project code
+#---------------------------------------------------------------------------------------------------
+
+
+# IMPORTS
 import pickle
 import os
 import sys
 
-# --- CONFIGURATION ---
+
+# CONFIGURATION
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "face_encodings.pickle")
 
 def delete_user(username):
-    # 1. Check if DB exists
+    # Check if DB exists
     if not os.path.exists(DB_FILE):
         print(f"[ERROR] Database file not found at: {DB_FILE}")
         return
 
-    # 2. Load the Database
+    # Load the Database
     try:
         with open(DB_FILE, "rb") as f:
             data = pickle.load(f)
@@ -20,11 +26,11 @@ def delete_user(username):
         print(f"[ERROR] Could not read database: {e}")
         return
 
-    # 3. Check and Delete
+    # Check and Delete
     if username in data:
         del data[username]
         
-        # 4. Save changes
+        # Save changes
         with open(DB_FILE, "wb") as f:
             pickle.dump(data, f)
             
