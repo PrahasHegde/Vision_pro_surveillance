@@ -1,9 +1,8 @@
-#main.py -> Main Application: Real-Time Face Recognition from ESP32-CAM Stream
+# main1.py -> Main Application: Real-Time Face Recognition from ESP32-CAM Stream
+#-------------------------------------------------------------------------------
 
 
-####################################################################################################################################
-
-
+# IMPORTS
 import cv2 as cv
 import numpy as np
 import os
@@ -13,16 +12,16 @@ import threading
 import gc
 from flask import Flask, Response, render_template_string
 
+
 #CONFIGURATION
 ESP32_URL = "http://192.168.0.196:81/stream"
-
 DB_FILE = "face_encodings2.pickle"
 YUNET_PATH = "models/face_detection_yunet_2023mar.onnx"
 SFACE_PATH = "models/face_recognition_sface_2021dec.onnx"
-
 MATCH_THRESHOLD = 0.4  
 CONFIDENCE_THRESHOLD = 0.85
 FRAME_SKIP_RATE = 5 
+
 
 app = Flask(__name__)
 
@@ -30,6 +29,8 @@ app = Flask(__name__)
 outputFrame = None
 lock = threading.Lock()
 face_db = {}
+
+
 
 def load_database():
     global face_db
@@ -165,6 +166,8 @@ def generate():
         yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encodedImage) + b'\r\n')
         time.sleep(0.03)
 
+
+# SIMPLE UI
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -184,6 +187,8 @@ HTML_TEMPLATE = """
 </html>
 """
 
+
+# ROUTES
 @app.route("/")
 def index():
     return render_template_string(HTML_TEMPLATE)
