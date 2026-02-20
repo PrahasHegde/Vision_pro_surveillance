@@ -1,8 +1,15 @@
+# check_db.py -> code to check the number of users/embeddings in the .pkl file == part of the main code
+#-----------------------------------------------------------------------------------------------
+
+
+# IMPORTS
 import pickle
 import os
 
+# PATH TO PKL FILE
 DB_FILE = "face_encodings.pickle"
 
+# MAIN
 if os.path.exists(DB_FILE):
     print(f"--- CONTENT OF {DB_FILE} ---")
     try:
