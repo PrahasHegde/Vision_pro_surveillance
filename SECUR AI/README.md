@@ -1,73 +1,39 @@
-# Welcome to your Lovable project
+# 👁️ Frontend - SECUR AI Computer Vision Based Smart Face Lock
 
-## Project info
+This is the React-based frontend interface for the Computer Vision Based Smart Face Lock system. It provides a secure, modern, and responsive dashboard for administrators to monitor access, manage users, and handle new biometric enrollments directly from a web browser or mobile device.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## ✨ Key Features
 
-## How can I edit this code?
+* **Admin Dashboard:** View the live stereo-vision camera feed, monitor real-time activity logs, and check the system's online/offline status.
+* **User Management:** View registered users, approve or deny pending registration requests, and securely delete users (automatically synchronizing with the backend dataset and AI models).
+* **Remote Unlock:** A manual override "Hold to Unlock" button for administrators to trigger the physical door lock remotely.
+* **Secure Biometric Enrollment:** * Multi-step registration flow for new users.
+  * Dynamic Math CAPTCHA for bot protection.
+  * Required Terms & Conditions and Privacy Policy agreements with interactive modals.
+  * In-browser 30-second video capture (encoded in VP8 WebM for maximum Raspberry Pi compatibility) to securely gather training data for facial recognition.
+* **Responsive UI:** Built with Tailwind CSS and glass-morphism effects for a sleek, modern look that scales perfectly from desktop monitors to smartphone screens.
 
-There are several ways of editing your application.
+## 🛠️ Tech Stack
 
-**Use Lovable**
+* **Framework:** [React](https://reactjs.org/) + [TypeScript](https://www.typescriptlang.org/)
+* **Build Tool:** [Vite](https://vitejs.dev/)
+* **Routing:** React Router v6
+* **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+* **UI Components:** [Radix UI](https://www.radix-ui.com/) / [shadcn/ui](https://ui.shadcn.com/)
+* **Icons:** [Lucide React](https://lucide.dev/)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## ⚙️ Configuration (`settings.ts`)
 
-Changes made via Lovable will be committed automatically to this repo.
+Before running or building the project, you must configure the backend connection URLs so that the frontend knows how to communicate with the Raspberry Pi. Open `src/config/settings.ts` and set your URLs based on your environment.
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### For Local Network Testing (Wi-Fi)
+If you are developing locally and connected to the same Wi-Fi as the Raspberry Pi:
+```typescript
+export const RPI_CONFIG = {
+  API_URL: "[http://192.168.0.15:5001](http://192.168.0.15:5001)",
+  VIDEO_FEED_URL: "[http://192.168.0.15:5000/video_feed](http://192.168.0.15:5000/video_feed)",
+  ENROLLMENT_URL: "[http://192.168.0.15:5002](http://192.168.0.15:5002)",
+  IP_ADDRESS: "192.168.0.15",
+  STATUS_CHECK_TIMEOUT: 5000,
+  STATUS_CHECK_INTERVAL: 10000,
+};
