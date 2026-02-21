@@ -37,3 +37,28 @@ export const RPI_CONFIG = {
   STATUS_CHECK_TIMEOUT: 5000,
   STATUS_CHECK_INTERVAL: 10000,
 };
+
+### For Production (Cloudflare Tunnels)
+When accessing the system securely over the internet (4G/5G), update the URLs to your generated Cloudflare Tunnel links. **Note: Cloudflare provides HTTPS automatically.**
+
+```typescript
+export const RPI_CONFIG = {
+  API_URL: "https://<your-api-tunnel>.trycloudflare.com",
+  // CRITICAL: Ensure /video_feed remains at the end of the video URL!
+  VIDEO_FEED_URL: "https://<your-video-tunnel>[.trycloudflare.com/video_feed](https://.trycloudflare.com/video_feed)", 
+  ENROLLMENT_URL: "https://<your-upload-tunnel>.trycloudflare.com",
+  IP_ADDRESS: "192.168.0.15", 
+  STATUS_CHECK_TIMEOUT: 5000,
+  STATUS_CHECK_INTERVAL: 10000,
+};
+
+## 🚀 Local Development Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+
+Start the local development server:
+
+Bash
+npm run dev
