@@ -37,8 +37,24 @@ export const RPI_CONFIG = {
   STATUS_CHECK_TIMEOUT: 5000,
   STATUS_CHECK_INTERVAL: 10000,
 };
+```
 
-### For Production (Cloudflare Tunnels)
+## 🚀 Local Development Setup
+
+1. **Install dependencies:**
+```
+   npm install
+```
+
+2. Start the local development server:
+
+```
+npm run dev
+```
+
+3. Open the provided local link (usually http://localhost:5173) in your browser. Any changes made to the code will hot-reload instantly.
+
+### 📦 Production Deployment (Raspberry Pi, Apache & Cloudflare Tunnels)
 When accessing the system securely over the internet (4G/5G), update the URLs to your generated Cloudflare Tunnel links. **Note: Cloudflare provides HTTPS automatically.**
 
 ```typescript
@@ -51,14 +67,37 @@ export const RPI_CONFIG = {
   STATUS_CHECK_TIMEOUT: 5000,
   STATUS_CHECK_INTERVAL: 10000,
 };
+```
 
-## 🚀 Local Development Setup
+When you are ready to deploy the live version to your Raspberry Pi's Apache web server, follow these exact steps:
 
-1. **Install dependencies:**
-   ```bash
-   npm install
+Build the production code (Run on your Laptop):
 
-Start the local development server:
+```
+npm run build
+```
 
-Bash
-npm run dev
+This compiles your React code into an optimized dist folder.
+
+Send the build to the Raspberry Pi (Run on your Laptop):
+Replace 192.168.0.15 with your Pi's actual IP address.
+
+```
+scp -r dist/* pi@192.168.0.15:/home/pi/Desktop/
+```
+
+Deploy to Apache (Run on the Raspberry Pi Terminal):
+Clear the old website files and move the new ones into the public web directory:
+
+```
+sudo rm -rf /var/www/html/*
+sudo cp -r /home/pi/Desktop/* /var/www/html/
+```
+
+Serve via Cloudflare:
+
+Open your Port 80 tunnel to make the dashboard accessible globally:
+
+```
+cloudflared tunnel --url http://localhost:80 2>&1 | grep --line-buffered -E -o 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'
+```
